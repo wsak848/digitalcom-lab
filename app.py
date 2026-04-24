@@ -68,8 +68,7 @@ if st.session_state.menu == "pcm":
 
 elif st.session_state.menu == "sampling":
     import sampling_streamlit as mod
-    fig = mod.run()
-    st.pyplot(fig)
+    mod.run()
 
 elif st.session_state.menu == "quant":
     import quantizedsim1 as mod3

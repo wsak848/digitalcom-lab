@@ -3,120 +3,120 @@ import numpy as np
 import plotly.graph_objects as go
 
 def run():
-    st.title("📡 PAM / QAM / OFDM (Classroom Mode)")
+    st.title("📡 Digital Modulation Lab (Interactive)")
 
-    mode = st.selectbox("เลือกหัวข้อ", ["PAM", "QAM", "OFDM"])
+    tab1, tab2, tab3 = st.tabs(["PAM", "QAM", "OFDM"])
 
     # =========================
     # PAM
     # =========================
-    if mode == "PAM":
-        st.header("🔴 PAM (Pulse Amplitude Modulation)")
+    with tab1:
+        st.subheader("🔴 PAM")
 
-        st.markdown("👉 แนวคิด: เปลี่ยน 'ระดับความสูงของสัญญาณ' ตามข้อมูล")
-
-        M = st.selectbox("M-PAM", [2, 4, 8])
-        bits = st.text_input("Input bits", "0101")
+        M = st.selectbox("M-PAM", [2, 4, 8], key="pam_M")
+        bits = st.text_input("Input bits", "0101", key="pam_bits")
+        noise = st.slider("Noise", 0.0, 1.0, 0.0, key="pam_noise")
 
         k = int(np.log2(M))
 
         if len(bits) % k != 0:
-            st.warning(f"ต้องใส่บิตหาร {k} ลงตัว")
-            return
+            st.warning(f"ต้องหาร {k} ลงตัว")
+        else:
+            symbols = [int(bits[i:i+k], 2) for i in range(0, len(bits), k)]
+            levels = np.linspace(-M+1, M-1, M)
+            signal = np.array([levels[s] for s in symbols])
 
-        # Mapping
-        symbols = [int(bits[i:i+k], 2) for i in range(0, len(bits), k)]
-        levels = np.linspace(-M+1, M-1, M)
-        signal = [levels[s] for s in symbols]
+            noisy = signal + noise*np.random.randn(len(signal))
 
-        st.markdown(f"🔢 Symbols: {symbols}")
-        st.markdown(f"📊 Levels: {levels}")
+            t = np.arange(len(signal))
 
-        t = np.arange(len(signal))
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(x=t, y=signal, name="Original"))
+            fig.add_trace(go.Scatter(x=t, y=noisy, name="Noisy"))
 
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=t,
-            y=signal,
-            mode='lines+markers'
-        ))
+            fig.update_layout(title="PAM Signal")
+            st.plotly_chart(fig, use_container_width=True)
 
-        fig.update_layout(title="PAM Signal (Amplitude changes)")
-        st.plotly_chart(fig, use_container_width=True)
-
-        st.info("💡 Insight: PAM ใช้ amplitude อย่างเดียว → noise กระทบง่าย")
+            st.info("💡 เพิ่ม Noise → amplitude เพี้ยน")
 
     # =========================
     # QAM
     # =========================
-    elif mode == "QAM":
-        st.header("🔵 QAM (Quadrature Amplitude Modulation)")
+    with tab2:
+        st.subheader("🔵 QAM")
 
-        st.markdown("👉 แนวคิด: ใช้ I + Q (2 มิติ) → ส่งข้อมูลได้มากขึ้น")
-
-        M = st.selectbox("QAM Order", [4, 16])
-        bits = st.text_input("Input bits", "010011")
+        M = st.selectbox("QAM Order", [4, 16], key="qam_M")
+        bits = st.text_input("Input bits", "010011", key="qam_bits")
+        noise = st.slider("Noise", 0.0, 1.0, 0.0, key="qam_noise")
 
         k = int(np.log2(M))
 
         if len(bits) % k != 0:
-            st.warning(f"ต้องใส่บิตหาร {k} ลงตัว")
-            return
+            st.warning(f"ต้องหาร {k} ลงตัว")
+        else:
+            symbols = [int(bits[i:i+k], 2) for i in range(0, len(bits), k)]
 
-        symbols = [int(bits[i:i+k], 2) for i in range(0, len(bits), k)]
+            sqrtM = int(np.sqrt(M))
+            I = np.array([(s % sqrtM) for s in symbols])
+            Q = np.array([(s // sqrtM) for s in symbols])
 
-        sqrtM = int(np.sqrt(M))
-        I = [(s % sqrtM) for s in symbols]
-        Q = [(s // sqrtM) for s in symbols]
+            # normalize
+            I = 2*I - (sqrtM-1)
+            Q = 2*Q - (sqrtM-1)
 
-        st.markdown(f"🔢 Symbols: {symbols}")
+            I_noisy = I + noise*np.random.randn(len(I))
+            Q_noisy = Q + noise*np.random.randn(len(Q))
 
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=I,
-            y=Q,
-            mode='markers',
-            marker=dict(size=12)
-        ))
+            fig = go.Figure()
 
-        fig.update_layout(
-            title="QAM Constellation",
-            xaxis_title="In-phase (I)",
-            yaxis_title="Quadrature (Q)"
-        )
+            fig.add_trace(go.Scatter(
+                x=I,
+                y=Q,
+                mode='markers',
+                name="Ideal"
+            ))
 
-        st.plotly_chart(fig, use_container_width=True)
+            fig.add_trace(go.Scatter(
+                x=I_noisy,
+                y=Q_noisy,
+                mode='markers',
+                name="Noisy"
+            ))
 
-        st.info("💡 Insight: QAM ส่งข้อมูลมากขึ้น แต่ต้องใช้ SNR สูง")
+            fig.update_layout(
+                title="QAM Constellation",
+                xaxis_title="I",
+                yaxis_title="Q"
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+            st.info("💡 Noise มาก → จุดกระจาย → error เพิ่ม")
 
     # =========================
     # OFDM
     # =========================
-    elif mode == "OFDM":
-        st.header("🟣 OFDM (Orthogonal Frequency Division Multiplexing)")
+    with tab3:
+        st.subheader("🟣 OFDM")
 
-        st.markdown("👉 แนวคิด: ใช้หลาย subcarrier ส่งข้อมูลพร้อมกัน")
+        N = st.slider("Subcarriers", 4, 64, 16)
+        noise = st.slider("Noise", 0.0, 1.0, 0.1)
 
-        N = st.slider("จำนวน Subcarriers", 4, 64, 16)
-        noise_level = st.slider("Noise Level", 0.0, 1.0, 0.1)
-
+        # random QAM-like symbols
         symbols = (np.random.randn(N) + 1j*np.random.randn(N))
 
-        # IFFT
         ofdm = np.fft.ifft(symbols)
 
-        # Add noise
-        noise = noise_level * np.random.randn(len(ofdm))
-        ofdm_noisy = np.real(ofdm) + noise
+        noisy = np.real(ofdm) + noise*np.random.randn(len(ofdm))
 
         t = np.arange(len(ofdm))
 
         # Time domain
         fig1 = go.Figure()
         fig1.add_trace(go.Scatter(x=t, y=np.real(ofdm), name="Original"))
-        fig1.add_trace(go.Scatter(x=t, y=ofdm_noisy, name="With Noise"))
+        fig1.add_trace(go.Scatter(x=t, y=noisy, name="Noisy"))
 
-        fig1.update_layout(title="OFDM Signal (Time Domain)")
+        fig1.update_layout(title="OFDM Signal (Time)")
         st.plotly_chart(fig1, use_container_width=True)
 
         # Frequency domain
@@ -126,10 +126,10 @@ def run():
         fig2 = go.Figure()
         fig2.add_trace(go.Scatter(x=freq, y=np.abs(fft)))
 
-        fig2.update_layout(title="OFDM Spectrum (Subcarriers)")
+        fig2.update_layout(title="OFDM Spectrum")
         st.plotly_chart(fig2, use_container_width=True)
 
-        st.info("💡 Insight: OFDM ใช้ subcarrier จำนวนมาก → ทน multipath ดีมาก")
+        st.info("💡 เพิ่ม subcarrier → bandwidth ถูกแบ่งเป็นหลายช่องเล็ก")
 
     st.markdown("---")
-    st.success("🎓 ใช้สอนหน้าห้องได้เลย: PAM → QAM → OFDM = Evolution ของการสื่อสาร")
+    st.success("🎓 ใช้ทดลอง: ปรับ Noise / M / Subcarrier แล้วดูผลทันที")

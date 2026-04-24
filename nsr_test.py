@@ -38,23 +38,9 @@ def run():
     # =========================
     fig = go.Figure()
 
-    fig.add_trace(go.Scatter(
-        x=t, y=signal,
-        name="Signal",
-        line=dict(width=3)
-    ))
-
-    fig.add_trace(go.Scatter(
-        x=t, y=noisy,
-        name="Noisy Signal",
-        line=dict(width=2)
-    ))
-
-    fig.add_trace(go.Scatter(
-        x=t, y=noise,
-        name="Noise",
-        line=dict(dash='dot')
-    ))
+    fig.add_trace(go.Scatter(x=t, y=signal, name="Signal"))
+    fig.add_trace(go.Scatter(x=t, y=noisy, name="Noisy Signal"))
+    fig.add_trace(go.Scatter(x=t, y=noise, name="Noise"))
 
     fig.update_layout(
         title=f"SNR = {snr_db:.2f} dB",
@@ -79,8 +65,33 @@ def run():
         st.metric("SNR (dB)", f"{snr_db:.2f} dB")
 
     # =========================
+    # 🔥 NEW: CALCULATION DETAIL
+    # =========================
+    st.markdown("---")
+    if st.checkbox("🔍 แสดงวิธีคำนวณ (Show Calculation Steps)"):
+
+        st.markdown("### 📐 สูตรที่ใช้")
+
+        :contentReference[oaicite:0]{index=0}
+
+        :contentReference[oaicite:1]{index=1}
+
+        st.markdown("### 🧮 คำนวณจากค่าจริง")
+
+        st.write(f"Signal Power = mean(signal²) = {signal_power:.4f}")
+        st.write(f"Noise Power = mean(noise²) = {noise_power:.4f}")
+
+        if noise_power != 0:
+            ratio = signal_power / noise_power
+            st.write(f"SNR (linear) = {signal_power:.4f} / {noise_power:.4f} = {ratio:.4f}")
+            st.write(f"SNR (dB) = 10 log10({ratio:.4f}) = {snr_db:.2f} dB")
+
+        st.info("💡 SNR คืออัตราส่วนกำลังของสัญญาณต่อ noise")
+
+    # =========================
     # INSIGHT
     # =========================
+    st.markdown("---")
     st.info("💡 Noise เพิ่ม → SNR ลด")
     st.info("💡 SNR สูง → สัญญาณชัด")
     st.info("💡 SNR ต่ำ → สัญญาณเพี้ยน")

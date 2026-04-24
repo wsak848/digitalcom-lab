@@ -32,7 +32,7 @@ def run():
     x_sample = np.sin(2*np.pi*f_signal*t_sample)
 
     # =========================
-    # QUANTIZATION (FIXED)
+    # QUANTIZATION (Improved)
     # =========================
     L = 2**n_bits
     x_norm = (x_sample + 1) / 2
@@ -42,7 +42,7 @@ def run():
     error = x_sample - xq
 
     # =========================
-    # ALIAS (FIXED FORMULA)
+    # ALIAS (Correct Formula)
     # =========================
     f_alias = abs((f_signal + fs_sample/2) % fs_sample - fs_sample/2)
 
@@ -80,24 +80,28 @@ def run():
         fig, axs = plt.subplots(4, 1, figsize=(8, 10))
         plt.subplots_adjust(hspace=0.5)
 
-        # ADC
+        # ===== 1. ADC Output =====
         axs[0].plot(t, x, label="Original")
         axs[0].stem(t_sample, xq, linefmt='r-', markerfmt='ro', basefmt=" ")
         axs[0].set_title("ADC Output\n" + title_text, color=color)
         axs[0].legend()
 
-        # Sampling
-        axs[1].plot(t_sample, x_sample, label="Sampled")
-        axs[1].plot(t_sample, xq, label="Quantized")
-        axs[1].set_title("Sampling vs Quantization")
+        # ===== 2. Sampling vs Quantization (🔥 FIXED) =====
+        x_interp = np.interp(t, t_sample, x_sample)
+
+        axs[1].plot(t, x_interp, label="Sampled (Interpolated)", linewidth=2)
+        axs[1].step(t_sample, xq, where='mid', label="Quantized (Step)", linewidth=2)
+        axs[1].scatter(t_sample, x_sample, color='blue', s=20, alpha=0.6)
+
+        axs[1].set_title("Sampling vs Quantization (Overlay Comparison)")
         axs[1].legend()
 
-        # Error
+        # ===== 3. Error =====
         axs[2].plot(t_sample, error, label="Error")
         axs[2].set_title("Quantization Error")
         axs[2].legend()
 
-        # FFT
+        # ===== 4. FFT =====
         axs[3].plot(freq_orig, fft_orig, label="Original Spectrum")
         axs[3].plot(freq_sample, fft_sample, label="Sampled Spectrum")
 
@@ -115,17 +119,13 @@ def run():
         return fig
 
     # =========================
-    # NORMAL DISPLAY
+    # DISPLAY
     # =========================
     if not animate:
         st.pyplot(plot_all())
 
-    # =========================
-    # 🎬 ALIASING ANIMATION
-    # =========================
-    if animate:
+    else:
         st.subheader("🎬 Aliasing Animation")
-
         placeholder = st.empty()
 
         for i in range(6):
@@ -142,30 +142,30 @@ def run():
     st.latex(r"f_s \geq 2f \quad (Nyquist)")
     st.latex(r"f_{alias} = \left| (f + \frac{f_s}{2}) \bmod f_s - \frac{f_s}{2} \right|")
     st.latex(r"L = 2^n")
-    st.latex(r"x_q = \text{round}(x_{norm}(L-1))/(L-1)")
+    st.latex(r"x_q = \frac{\text{round}(x_{norm}(L-1))}{L-1}")
 
     # =========================
-    # STEP
+    # STEP-BY-STEP
     # =========================
     st.markdown("---")
     if st.checkbox("🔍 แสดงวิธีคำนวณ"):
 
-        st.write(f"1. f = {f_signal} Hz")
-        st.write(f"2. fs = {fs_sample} Hz")
+        st.write(f"1. Signal frequency f = {f_signal} Hz")
+        st.write(f"2. Sampling rate fs = {fs_sample} Hz")
         st.write(f"3. Nyquist = 2f = {nyquist} Hz")
 
         if fs_sample < nyquist:
-            st.error("→ เกิด Aliasing")
+            st.error("→ fs < 2f → เกิด Aliasing")
         else:
-            st.success("→ ไม่เกิด Aliasing")
+            st.success("→ fs ≥ 2f → ไม่เกิด Aliasing")
 
-        st.write(f"4. Levels = 2^{n_bits} = {L}")
+        st.write(f"4. Quantization levels = 2^{n_bits} = {L}")
         st.write(f"5. Alias frequency = {f_alias:.2f} Hz")
 
     # =========================
     # INSIGHT
     # =========================
     st.markdown("---")
-    st.info("💡 fs < 2f → frequency เพี้ยน (alias)")
-    st.info("💡 FFT จะโชว์ alias frequency")
-    st.info("💡 quantization error ลดเมื่อ n เพิ่ม")
+    st.info("💡 fs < 2f → aliasing (ความถี่เพี้ยน)")
+    st.info("💡 n เพิ่ม → quantization ดีขึ้น")
+    st.info("💡 FFT ใช้ตรวจ alias ได้ดีที่สุด")

@@ -1,6 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
+import matplotlib.pyplot as plt
+import numpy as np
+
+def run():
+    t = np.linspace(0, 1, 100)
+    x = np.sin(2 * np.pi * 5 * t)
+
+    fig, ax = plt.subplots()
+    ax.plot(t, x)
+    ax.set_title("Quantization Demo")
+
+    return fig
 
 # --- 1. ตั้งค่าสัญญาณ Analog และ Sampling ---
 # อาจารย์สามารถปรับ fs (Sampling Rate) ตรงนี้ได้เลยครับ

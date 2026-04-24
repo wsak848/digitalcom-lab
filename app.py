@@ -72,7 +72,7 @@ elif st.session_state.menu == "sampling":
     st.pyplot(fig)
 
 elif st.session_state.menu == "quant":
-    import quantization_test as mod3
+    import quantizedsim1 as mod3
     fig = mod3.run()
     st.pyplot(fig)
 

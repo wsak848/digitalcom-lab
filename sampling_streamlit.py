@@ -1,13 +1,23 @@
+import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
 def run():
+    st.title("📡 Sampling, Quantization & Aliasing Lab")
+
     # =========================
-    # PARAMETERS (ตั้งค่าพื้นฐาน)
+    # CONTROL PANEL
     # =========================
-    f_signal = 10     # Hz
-    fs_sample = 15    # Hz (ลองเปลี่ยนเพื่อดู aliasing)
-    n_bits = 4
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        f_signal = st.slider("Signal Frequency (Hz)", 1, 20, 10)
+
+    with col2:
+        fs_sample = st.slider("Sampling Rate fs (Hz)", 5, 50, 15)
+
+    with col3:
+        n_bits = st.slider("Bit Depth (bits)", 1, 8, 4)
 
     # =========================
     # TIME BASE
@@ -28,13 +38,13 @@ def run():
     error = x_sample - xq
 
     # =========================
-    # ALIAS CALCULATION
+    # ALIASING
     # =========================
     k = int(round(f_signal / fs_sample))
     f_alias = abs(f_signal - k * fs_sample)
 
     # =========================
-    # FFT FUNCTION
+    # FFT
     # =========================
     def compute_fft(signal, fs):
         N = len(signal)
@@ -53,10 +63,10 @@ def run():
         status = "⚠️ ALIASING"
         color = 'red'
     else:
-        status = "✅ OK"
+        status = "✅ OK (Nyquist satisfied)"
         color = 'green'
 
-    title_text = f"f={f_signal}Hz | fs={fs_sample}Hz | alias={f_alias:.2f}Hz | {status}"
+    title_text = f"f={f_signal}Hz | fs={fs_sample}Hz | alias={f_alias:.2f}Hz"
 
     # =========================
     # PLOT
@@ -90,4 +100,45 @@ def run():
     axs[3].set_title("Frequency Spectrum (FFT)")
     axs[3].legend()
 
-    return fig
+    st.pyplot(fig)
+
+    # =========================
+    # FORMULAS (🔥 เพิ่มใหม่)
+    # =========================
+    st.markdown("---")
+    st.header("📐 สมการที่ใช้")
+
+    st.latex(r"f_s \geq 2f \quad \text{(Nyquist Criterion)}")
+    st.latex(r"f_{alias} = |f - kf_s|")
+    st.latex(r"L = 2^n")
+    st.latex(r"\Delta = \frac{2}{L}")
+    st.latex(r"x_q = \text{round}\left(\frac{x+1}{\Delta}\right)\Delta - 1")
+
+    # =========================
+    # CALCULATION STEP
+    # =========================
+    st.markdown("---")
+    if st.checkbox("🔍 แสดงวิธีคำนวณ"):
+
+        st.subheader("Step-by-step")
+
+        st.write(f"1. Sampling Rate (fs) = {fs_sample} Hz")
+        st.write(f"2. Signal Frequency (f) = {f_signal} Hz")
+        st.write(f"3. Nyquist = 2f = {2*f_signal} Hz")
+
+        if fs_sample < 2*f_signal:
+            st.error("→ fs < 2f → เกิด Aliasing")
+        else:
+            st.success("→ fs ≥ 2f → ไม่เกิด Aliasing")
+
+        st.write(f"4. Quantization Levels = 2^{n_bits} = {L}")
+        st.write(f"5. Step size Δ = {delta:.4f}")
+        st.write(f"6. Alias frequency = {f_alias:.2f} Hz")
+
+    # =========================
+    # INSIGHT
+    # =========================
+    st.markdown("---")
+    st.info("💡 fs < 2f → เกิด aliasing (ความถี่เพี้ยน)")
+    st.info("💡 n เพิ่ม → quantization ดีขึ้น")
+    st.info("💡 FFT ใช้ดู frequency จริง vs alias")

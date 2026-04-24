@@ -42,7 +42,7 @@ def run():
     error = x_sample - xq
 
     # =========================
-    # ALIAS (Correct Formula)
+    # ALIAS (Correct)
     # =========================
     f_alias = abs((f_signal + fs_sample/2) % fs_sample - fs_sample/2)
 
@@ -86,12 +86,34 @@ def run():
         axs[0].set_title("ADC Output\n" + title_text, color=color)
         axs[0].legend()
 
-        # ===== 2. Sampling vs Quantization (🔥 FIXED) =====
+        # ===== 2. Sampling vs Quantization (🔥 FIXED CLEAR OVERLAY) =====
         x_interp = np.interp(t, t_sample, x_sample)
 
-        axs[1].plot(t, x_interp, label="Sampled (Interpolated)", linewidth=2)
-        axs[1].step(t_sample, xq, where='mid', label="Quantized (Step)", linewidth=2)
-        axs[1].scatter(t_sample, x_sample, color='blue', s=20, alpha=0.6)
+        axs[1].plot(
+            t, x_interp,
+            color='blue',
+            linewidth=3,
+            label="Sampled (Interpolated)",
+            zorder=3
+        )
+
+        axs[1].scatter(
+            t_sample, x_sample,
+            color='blue',
+            s=30,
+            alpha=0.8,
+            label="Sample Points",
+            zorder=4
+        )
+
+        axs[1].step(
+            t_sample, xq,
+            where='mid',
+            color='orange',
+            linewidth=2,
+            label="Quantized (Step)",
+            zorder=2
+        )
 
         axs[1].set_title("Sampling vs Quantization (Overlay Comparison)")
         axs[1].legend()
@@ -123,7 +145,6 @@ def run():
     # =========================
     if not animate:
         st.pyplot(plot_all())
-
     else:
         st.subheader("🎬 Aliasing Animation")
         placeholder = st.empty()
@@ -145,21 +166,21 @@ def run():
     st.latex(r"x_q = \frac{\text{round}(x_{norm}(L-1))}{L-1}")
 
     # =========================
-    # STEP-BY-STEP
+    # STEP
     # =========================
     st.markdown("---")
     if st.checkbox("🔍 แสดงวิธีคำนวณ"):
 
-        st.write(f"1. Signal frequency f = {f_signal} Hz")
-        st.write(f"2. Sampling rate fs = {fs_sample} Hz")
+        st.write(f"1. f = {f_signal} Hz")
+        st.write(f"2. fs = {fs_sample} Hz")
         st.write(f"3. Nyquist = 2f = {nyquist} Hz")
 
         if fs_sample < nyquist:
-            st.error("→ fs < 2f → เกิด Aliasing")
+            st.error("→ เกิด Aliasing")
         else:
-            st.success("→ fs ≥ 2f → ไม่เกิด Aliasing")
+            st.success("→ ไม่เกิด Aliasing")
 
-        st.write(f"4. Quantization levels = 2^{n_bits} = {L}")
+        st.write(f"4. Levels = 2^{n_bits} = {L}")
         st.write(f"5. Alias frequency = {f_alias:.2f} Hz")
 
     # =========================

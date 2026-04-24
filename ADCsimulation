@@ -1,0 +1,158 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
+
+# =========================
+# TIME BASE (high resolution for analog)
+# =========================
+fs = 1000
+t = np.linspace(0, 1, fs)
+
+# =========================
+# FUNCTIONS
+# =========================
+def adc_process(f_signal, fs_sample, n_bits):
+    x = np.sin(2*np.pi*f_signal*t)
+
+    t_sample = np.linspace(0, 1, fs_sample)
+    x_sample = np.sin(2*np.pi*f_signal*t_sample)
+
+    # quantization
+    L = 2**n_bits
+    xmin, xmax = -1, 1
+    delta = (xmax - xmin)/L
+    xq = np.round((x_sample - xmin)/delta)*delta + xmin
+
+    error = x_sample - xq
+
+    return x, t_sample, x_sample, xq, error
+
+
+def compute_alias(f_signal, fs):
+    k = int(round(f_signal / fs))
+    f_alias = abs(f_signal - k * fs)
+    return f_alias
+
+
+def compute_fft(signal, fs):
+    N = len(signal)
+    fft = np.fft.fft(signal)
+    freq = np.fft.fftfreq(N, d=1/fs)
+
+    mask = freq >= 0
+    return freq[mask], np.abs(fft[mask])
+
+
+# =========================
+# INITIAL VALUES
+# =========================
+f_signal = 5
+fs_sample = 20
+n_bits = 3
+
+# =========================
+# PLOT SETUP
+# =========================
+fig, axs = plt.subplots(4, 1, figsize=(10, 10))
+plt.subplots_adjust(bottom=0.3)
+
+# =========================
+# INITIAL DRAW
+# =========================
+x, t_sample, x_sample, xq, error = adc_process(f_signal, fs_sample, n_bits)
+
+# =========================
+# SLIDERS
+# =========================
+axcolor = 'lightgoldenrodyellow'
+
+ax_f = plt.axes([0.2, 0.2, 0.65, 0.03], facecolor=axcolor)
+ax_fs = plt.axes([0.2, 0.15, 0.65, 0.03], facecolor=axcolor)
+ax_bits = plt.axes([0.2, 0.1, 0.65, 0.03], facecolor=axcolor)
+
+s_f = Slider(ax_f, 'Signal Freq', 1, 20, valinit=f_signal)
+s_fs = Slider(ax_fs, 'Sampling Fs', 5, 100, valinit=fs_sample)
+s_bits = Slider(ax_bits, 'Bits', 1, 8, valinit=n_bits)
+
+# =========================
+# UPDATE FUNCTION
+# =========================
+def update(val):
+    f = s_f.val
+    fs_s = int(s_fs.val)
+    bits = int(s_bits.val)
+
+    x, t_sample, x_sample, xq, error = adc_process(f, fs_s, bits)
+
+    f_alias = compute_alias(f, fs_s)
+
+    # FFT
+    freq_orig, fft_orig = compute_fft(x, fs)
+    freq_sample, fft_sample = compute_fft(x_sample, fs_s)
+
+    # clear plots
+    for ax in axs:
+        ax.clear()
+
+    # status
+    if fs_s < 2*f:
+        status = "⚠️ ALIASING!"
+        color = 'red'
+    else:
+        status = "✅ OK"
+        color = 'green'
+
+    title_text = f"f={f:.2f}Hz | fs={fs_s}Hz | alias={f_alias:.2f}Hz | {status}"
+
+    # =========================
+    # PLOT 1: ADC OUTPUT
+    # =========================
+    axs[0].plot(t, x, label="Original")
+    axs[0].stem(t_sample, xq, linefmt='r-', markerfmt='ro', basefmt=" ")
+    axs[0].set_title("ADC Output\n" + title_text, color=color)
+    axs[0].legend()
+
+    # =========================
+    # PLOT 2: Sampling vs Quantization
+    # =========================
+    axs[1].plot(t_sample, x_sample, label="Sampled")
+    axs[1].plot(t_sample, xq, label="Quantized")
+    axs[1].set_title("Sampling vs Quantization")
+    axs[1].legend()
+
+    axs[1].text(0.02, 0.9, title_text,
+                transform=axs[1].transAxes,
+                fontsize=10,
+                bbox=dict(facecolor='white', alpha=0.7))
+
+    # =========================
+    # PLOT 3: ERROR
+    # =========================
+    axs[2].plot(t_sample, error, label="Error")
+    axs[2].set_title("Quantization Error")
+    axs[2].legend()
+
+    # =========================
+    # PLOT 4: FFT
+    # =========================
+    axs[3].plot(freq_orig, fft_orig, label="Original Spectrum")
+    axs[3].plot(freq_sample, fft_sample, label="Sampled Spectrum")
+
+    axs[3].axvline(f, color='green', linestyle='--', label='True f')
+    axs[3].axvline(f_alias, color='red', linestyle='--', label='Alias f')
+
+    axs[3].set_xlim(0, max(20, f*3))
+    axs[3].set_title("Frequency Spectrum (FFT)")
+    axs[3].legend()
+
+    fig.canvas.draw_idle()
+
+# connect sliders
+s_f.on_changed(update)
+s_fs.on_changed(update)
+s_bits.on_changed(update)
+
+# first draw
+update(None)
+
+plt.show()

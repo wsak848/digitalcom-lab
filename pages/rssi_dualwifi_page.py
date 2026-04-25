@@ -3,25 +3,27 @@ from core import rssi_dualwifi
 from streamlit_plotly_events import plotly_events
 
 def run():
-    st.title("📡 WiFi Planner (Click to Move AP)")
+    st.title("📡 WiFi Planner (Drag AP freely)")
 
     # =========================
-    # SESSION STATE
+    # SESSION
     # =========================
     if "ap1" not in st.session_state:
         st.session_state.ap1 = [20, 80]
         st.session_state.ap2 = [80, 20]
         st.session_state.dev = [50, 50]
+        st.session_state.drag_target = "AP1"
 
     # =========================
-    # MODE
+    # SELECT TARGET
     # =========================
-    mode = st.radio(
-        "เลือกสิ่งที่จะย้าย",
-        ["AP1", "AP2", "Device"]
+    target = st.radio(
+        "เลือกสิ่งที่จะลาก",
+        ["AP1", "AP2", "Device"],
+        key="drag_target"
     )
 
-    st.info("👉 คลิกบนแผนที่เพื่อย้ายตำแหน่ง")
+    st.info("🖱️ คลิกค้าง + ขยับเมาส์ = ลาก (Drag Simulation)")
 
     # =========================
     # DRAW MAP
@@ -32,40 +34,41 @@ def run():
         st.session_state.dev
     )
 
-    selected_points = plotly_events(
+    fig.update_layout(
+        clickmode='event+select',
+        dragmode='pan'
+    )
+
+    # =========================
+    # GET EVENTS
+    # =========================
+    events = plotly_events(
         fig,
         click_event=True,
-        hover_event=False,
+        hover_event=True,   # 🔥 ใช้ hover เป็น drag
         select_event=False
     )
 
-    # 🔥 DEBUG (เอาไว้ดูว่าคลิกติดไหม)
-    # st.write(selected_points)
+    # =========================
+    # DRAG LOGIC
+    # =========================
+    if events:
+        x = max(0, min(100, int(events[-1]["x"])))
+        y = max(0, min(100, int(events[-1]["y"])))
+
+        if target == "AP1":
+            st.session_state.ap1 = [x, y]
+
+        elif target == "AP2":
+            st.session_state.ap2 = [x, y]
+
+        elif target == "Device":
+            st.session_state.dev = [x, y]
+
+        st.rerun()
 
     # =========================
-    # HANDLE CLICK
-    # =========================
-    if selected_points and len(selected_points) > 0:
-        try:
-            x = int(selected_points[0]["x"])
-            y = int(selected_points[0]["y"])
-
-            if mode == "AP1":
-                st.session_state.ap1 = [x, y]
-
-            elif mode == "AP2":
-                st.session_state.ap2 = [x, y]
-
-            elif mode == "Device":
-                st.session_state.dev = [x, y]
-
-            st.rerun()
-
-        except Exception as e:
-            st.error(f"Click error: {e}")
-
-    # =========================
-    # SHOW VALUE
+    # RSSI
     # =========================
     rssi = rssi_dualwifi.best_rssi(
         st.session_state.ap1,
@@ -76,7 +79,7 @@ def run():
     st.metric("📶 Best RSSI", f"{rssi:.2f} dBm")
 
     # =========================
-    # DEBUG PANEL
+    # DEBUG
     # =========================
     with st.expander("📍 Current Position"):
         st.write("AP1:", st.session_state.ap1)

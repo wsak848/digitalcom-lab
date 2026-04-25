@@ -1,3 +1,4 @@
+
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
@@ -91,7 +92,7 @@ def run():
             linefmt='r-',
             markerfmt='ro',
             basefmt=" ",
-            use_line_collection=True
+           
         )
 
         axs[0].set_title("ADC Output\n" + title_text, color=color)

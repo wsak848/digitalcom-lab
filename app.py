@@ -66,6 +66,9 @@ if st.session_state.menu == "pcm":
     fig = mod2.run()
     st.pyplot(fig)
 
+if st.button("11. Dual WiFi RSSI"):
+    st.session_state.menu = "rssi"
+
 elif st.session_state.menu == "sampling":
     import sampling_streamlit as mod
     mod.run()
@@ -106,3 +109,7 @@ elif st.session_state.menu == "ofdm":
 elif st.session_state.menu == "ofdm_wifi":
     from pages import ofdm_wifi_page
     ofdm_wifi_page.run()
+
+elif st.session_state.menu == "rssi":
+    from pages import rssi_dualwifi_page
+    rssi_dualwifi_page.run()

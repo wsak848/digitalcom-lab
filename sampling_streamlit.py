@@ -1,4 +1,3 @@
-
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
@@ -31,7 +30,7 @@ def run():
     t = np.linspace(0, duration, 1000)
     x = np.sin(2*np.pi*f_signal*t)
 
-    # 🔥 FIX: sampling time ถูกต้อง
+    # ✅ FIX sampling
     t_sample = np.arange(0, duration, 1/fs_sample)
     x_sample = np.sin(2*np.pi*f_signal*t_sample)
 
@@ -72,7 +71,7 @@ def run():
         status = "⚠️ ALIASING"
         color = 'red'
     else:
-        status = "✅ OK"
+        status = "✅ OK (Nyquist satisfied)"
         color = 'green'
 
     title_text = f"f={f_signal}Hz | fs={fs_sample}Hz | alias={f_alias:.2f}Hz"
@@ -84,57 +83,35 @@ def run():
         fig, axs = plt.subplots(4, 1, figsize=(8, 10))
         plt.subplots_adjust(hspace=0.5)
 
-        # ===== 1. ADC Output (🔥 ชัดขึ้น) =====
+        # 1. ADC Output
         axs[0].plot(t, x, label="Original")
-
-        axs[0].stem(
-            t_sample, x_sample,
-            linefmt='r-',
-            markerfmt='ro',
-            basefmt=" ",
-           
-        )
-
+        axs[0].stem(t_sample, x_sample,
+                    linefmt='r-', markerfmt='ro', basefmt=" ")
         axs[0].set_title("ADC Output\n" + title_text, color=color)
         axs[0].legend()
 
-        # ===== 2. Overlay =====
+        # 2. Overlay
         x_interp = np.interp(t, t_sample, x_sample)
 
-        axs[1].plot(
-            t, x_interp,
-            color='blue',
-            linewidth=3,
-            label="Sampled (Interpolated)",
-            zorder=3
-        )
+        axs[1].plot(t, x_interp, color='blue', linewidth=3,
+                    label="Sampled (Interpolated)", zorder=3)
 
-        axs[1].scatter(
-            t_sample, x_sample,
-            color='blue',
-            s=30,
-            label="Sample Points",
-            zorder=4
-        )
+        axs[1].scatter(t_sample, x_sample,
+                       color='blue', s=30, label="Sample Points", zorder=4)
 
-        axs[1].step(
-            t_sample, xq,
-            where='mid',
-            color='orange',
-            linewidth=2,
-            label="Quantized (Step)",
-            zorder=2
-        )
+        axs[1].step(t_sample, xq,
+                    where='mid', color='orange', linewidth=2,
+                    label="Quantized (Step)", zorder=2)
 
         axs[1].set_title("Sampling vs Quantization (Overlay Comparison)")
         axs[1].legend()
 
-        # ===== 3. Error =====
+        # 3. Error
         axs[2].plot(t_sample, error, label="Error")
         axs[2].set_title("Quantization Error")
         axs[2].legend()
 
-        # ===== 4. FFT =====
+        # 4. FFT
         axs[3].plot(freq_orig, fft_orig, label="Original Spectrum")
         axs[3].plot(freq_sample, fft_sample, label="Sampled Spectrum")
 
@@ -160,14 +137,39 @@ def run():
             time.sleep(0.5)
 
     # =========================
-    # FORMULA
+    # 📐 FORMULAS (กลับมาแล้ว)
     # =========================
     st.markdown("---")
-    st.latex(r"f_s \geq 2f")
+    st.header("📐 สมการที่ใช้")
+
+    st.latex(r"f_s \geq 2f \quad (Nyquist\ Criterion)")
+    st.latex(r"f_{alias} = \left| (f + \frac{f_s}{2}) \bmod f_s - \frac{f_s}{2} \right|")
     st.latex(r"L = 2^n")
+    st.latex(r"x_q = \frac{\text{round}(x_{norm}(L-1))}{L-1}")
 
     # =========================
-    # INFO
+    # 🔍 STEP-BY-STEP (กลับมาแล้ว)
     # =========================
+    st.markdown("---")
+    if st.checkbox("🔍 แสดงวิธีคำนวณ"):
+
+        st.write(f"1. Signal Frequency f = {f_signal} Hz")
+        st.write(f"2. Sampling Rate fs = {fs_sample} Hz")
+        st.write(f"3. Nyquist = 2f = {nyquist} Hz")
+
+        if fs_sample < nyquist:
+            st.error("→ fs < 2f → เกิด Aliasing")
+        else:
+            st.success("→ fs ≥ 2f → ไม่เกิด Aliasing")
+
+        st.write(f"4. Quantization Levels = 2^{n_bits} = {L}")
+        st.write(f"5. Alias Frequency = {f_alias:.2f} Hz")
+
+    # =========================
+    # INSIGHT
+    # =========================
+    st.markdown("---")
+    st.info("💡 fs < 2f → aliasing (ความถี่เพี้ยน)")
     st.info("💡 fs สูง → sample หนาแน่นขึ้น")
     st.info("💡 n สูง → quantization ดีขึ้น")
+    st.info("💡 FFT ใช้ตรวจ alias ได้ดีที่สุด")

@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
 def generate_plotly_map(ap1, ap2, dev):
@@ -18,7 +17,7 @@ def generate_plotly_map(ap1, ap2, dev):
 
     fig = go.Figure()
 
-    # Heatmap
+    # 🔥 FIX 1: Heatmap ต้องไม่บัง click
     fig.add_trace(go.Heatmap(
         x=x,
         y=y,
@@ -27,7 +26,8 @@ def generate_plotly_map(ap1, ap2, dev):
         zmin=-100,
         zmax=-30,
         colorbar=dict(title="dBm"),
-        opacity=0.7
+        opacity=0.6,
+        hoverinfo='skip'   # ⭐ สำคัญมาก
     ))
 
     # AP1
@@ -63,11 +63,13 @@ def generate_plotly_map(ap1, ap2, dev):
         name="Device"
     ))
 
+    # 🔥 FIX 2: enable click event
     fig.update_layout(
         title="Interactive WiFi Coverage Map",
-        xaxis=dict(range=[0,100]),
-        yaxis=dict(range=[0,100]),
-        dragmode="pan"
+        xaxis=dict(range=[0, 100]),
+        yaxis=dict(range=[0, 100]),
+        dragmode="pan",
+        clickmode='event+select'   # ⭐ สำคัญ
     )
 
     return fig

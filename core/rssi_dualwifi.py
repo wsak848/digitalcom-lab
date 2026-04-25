@@ -1,3 +1,5 @@
+import numpy as np
+import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
 def generate_plotly_map(ap1, ap2, dev):

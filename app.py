@@ -2,7 +2,7 @@ import streamlit as st
 import traceback
 
 # =========================
-# Page Config (ต้องอยู่บนสุด)
+# Page Config
 # =========================
 st.set_page_config(
     page_title="Digital Communication Lab",
@@ -45,7 +45,6 @@ if st.button("5. SNR"):
 if st.button("6. PAM QAM OFDM"):
     st.session_state.menu = "pam"
 
-# 🔥 เพิ่มใหม่
 if st.button("7. TDM Multiplexing"):
     st.session_state.menu = "tdm"
 
@@ -57,57 +56,65 @@ if st.button("9. OFDM"):
 
 if st.button("10. WiFi OFDM Simulation"):
     st.session_state.menu = "ofdm_wifi"
+
+# ✅ เพิ่มตรงนี้
+if st.button("11. Dual WiFi RSSI"):
+    st.session_state.menu = "rssi"
+
 # =========================
 # Routing
 # =========================
-# =========================
-# Routing
-# =========================
-if st.session_state.menu == "pcm":
-    import pcm_bitrate_demo as mod2
-    fig = mod2.run()
-    st.pyplot(fig)
+try:
+    if st.session_state.menu == "pcm":
+        import pcm_bitrate_demo as mod2
+        fig = mod2.run()
+        st.pyplot(fig)
 
-elif st.session_state.menu == "sampling":
-    import sampling_streamlit as mod
-    mod.run()
+    elif st.session_state.menu == "sampling":
+        import sampling_streamlit as mod
+        mod.run()
 
-elif st.session_state.menu == "quant":
-    import quantizedsim1 as mod3
-    fig = mod3.run()
-    st.pyplot(fig)
+    elif st.session_state.menu == "quant":
+        import quantizedsim1 as mod3
+        fig = mod3.run()
+        st.pyplot(fig)
 
-elif st.session_state.menu == "line":
-    import linecoding_test as mod3
-    fig = mod3.run()
-    st.pyplot(fig)
+    elif st.session_state.menu == "line":
+        import linecoding_test as mod3
+        fig = mod3.run()
+        st.pyplot(fig)
 
-elif st.session_state.menu == "snr":
-    import nsr_test as mod4
-    fig = mod4.run()
-    st.pyplot(fig)
+    elif st.session_state.menu == "snr":
+        import nsr_test as mod4
+        fig = mod4.run()
+        st.pyplot(fig)
 
-elif st.session_state.menu == "pam":
-    import pam_qam_ofdm as mod4
-    fig = mod4.run()
-    st.pyplot(fig)
+    elif st.session_state.menu == "pam":
+        import pam_qam_ofdm as mod4
+        fig = mod4.run()
+        st.pyplot(fig)
 
-elif st.session_state.menu == "tdm":
-    from pages import tdm_page as mod5
-    mod5.run()
+    elif st.session_state.menu == "tdm":
+        from pages import tdm_page as mod5
+        mod5.run()
 
-elif st.session_state.menu == "fdm":
-    from pages import fdm_page
-    fdm_page.run()
+    elif st.session_state.menu == "fdm":
+        from pages import fdm_page
+        fdm_page.run()
 
-elif st.session_state.menu == "ofdm":
-    from pages import ofdm_page
-    ofdm_page.run()
+    elif st.session_state.menu == "ofdm":
+        from pages import ofdm_page
+        ofdm_page.run()
 
-elif st.session_state.menu == "ofdm_wifi":
-    from pages import ofdm_wifi_page
-    ofdm_wifi_page.run()
+    elif st.session_state.menu == "ofdm_wifi":
+        from pages import ofdm_wifi_page
+        ofdm_wifi_page.run()
 
-elif st.session_state.menu == "rssi":
-    from pages import rssi_dualwifi_page
-    rssi_dualwifi_page.run()
+    elif st.session_state.menu == "rssi":
+        from pages import rssi_dualwifi_page
+        rssi_dualwifi_page.run()
+
+except Exception as e:
+    st.error("ERROR:")
+    st.text(str(e))
+    st.text(traceback.format_exc())

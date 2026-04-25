@@ -1,4 +1,5 @@
 import streamlit as st
+import traceback
 
 # =========================
 # Page Config (ต้องอยู่บนสุด)
@@ -113,7 +114,6 @@ elif st.session_state.menu == "ofdm_wifi":
 elif st.session_state.menu == "rssi":
     from pages import rssi_dualwifi_page
     rssi_dualwifi_page.run()
-import traceback
 
 elif st.session_state.menu == "rssi":
     try:

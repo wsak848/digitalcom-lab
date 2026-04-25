@@ -35,26 +35,34 @@ def run():
     selected_points = plotly_events(
         fig,
         click_event=True,
-        hover_event=False
+        hover_event=False,
+        select_event=False
     )
+
+    # 🔥 DEBUG (เอาไว้ดูว่าคลิกติดไหม)
+    # st.write(selected_points)
 
     # =========================
     # HANDLE CLICK
     # =========================
-    if selected_points:
-        x = int(selected_points[0]["x"])
-        y = int(selected_points[0]["y"])
+    if selected_points and len(selected_points) > 0:
+        try:
+            x = int(selected_points[0]["x"])
+            y = int(selected_points[0]["y"])
 
-        if mode == "AP1":
-            st.session_state.ap1 = [x, y]
+            if mode == "AP1":
+                st.session_state.ap1 = [x, y]
 
-        elif mode == "AP2":
-            st.session_state.ap2 = [x, y]
+            elif mode == "AP2":
+                st.session_state.ap2 = [x, y]
 
-        elif mode == "Device":
-            st.session_state.dev = [x, y]
+            elif mode == "Device":
+                st.session_state.dev = [x, y]
 
-        st.rerun()
+            st.rerun()
+
+        except Exception as e:
+            st.error(f"Click error: {e}")
 
     # =========================
     # SHOW VALUE
@@ -68,7 +76,7 @@ def run():
     st.metric("📶 Best RSSI", f"{rssi:.2f} dBm")
 
     # =========================
-    # DEBUG (optional)
+    # DEBUG PANEL
     # =========================
     with st.expander("📍 Current Position"):
         st.write("AP1:", st.session_state.ap1)

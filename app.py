@@ -61,12 +61,6 @@ if st.button("10. WiFi OFDM Simulation"):
 # Routing
 # =========================
 
-# ===== OLD MODULES =====
-if st.session_state.menu == "pcm":
-    import pcm_bitrate_demo as mod2
-    fig = mod2.run()
-    st.pyplot(fig)
-
 if st.button("11. Dual WiFi RSSI"):
     st.session_state.menu = "rssi"
 

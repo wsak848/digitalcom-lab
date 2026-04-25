@@ -1,6 +1,23 @@
 import numpy as np
 import plotly.graph_objects as go
 
+# 🔥 เพิ่มฟังก์ชันนี้
+def calculate_rssi(x_ap, y_ap, x, y):
+    d = np.sqrt((x - x_ap)**2 + (y - y_ap)**2)
+
+    # ป้องกันหาร 0
+    d = np.maximum(d, 1)
+
+    # Path loss model แบบง่าย
+    rssi = -30 - 20 * np.log10(d)
+
+    return rssi
+    
+def best_rssi(ap1, ap2, dev):
+    r1 = calculate_rssi(ap1[0], ap1[1], dev[0], dev[1])
+    r2 = calculate_rssi(ap2[0], ap2[1], dev[0], dev[1])
+    return max(r1, r2)
+
 def generate_plotly_map(ap1, ap2, dev):
 
     size = 100

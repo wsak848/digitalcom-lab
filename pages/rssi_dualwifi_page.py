@@ -3,27 +3,25 @@ from core import rssi_dualwifi
 from streamlit_plotly_events import plotly_events
 
 def run():
-    st.title("📡 WiFi Planner (Drag AP freely)")
+    st.title("📡 WiFi Planner (Click to Move AP)")
 
     # =========================
-    # SESSION
+    # STATE
     # =========================
     if "ap1" not in st.session_state:
         st.session_state.ap1 = [20, 80]
         st.session_state.ap2 = [80, 20]
         st.session_state.dev = [50, 50]
-        st.session_state.drag_target = "AP1"
 
     # =========================
-    # SELECT TARGET
+    # SELECT OBJECT
     # =========================
     target = st.radio(
-        "เลือกสิ่งที่จะลาก",
-        ["AP1", "AP2", "Device"],
-        key="drag_target"
+        "เลือกสิ่งที่จะย้าย",
+        ["AP1", "AP2", "Device"]
     )
 
-    st.info("🖱️ คลิกค้าง + ขยับเมาส์ = ลาก (Drag Simulation)")
+    st.info("👉 คลิกตำแหน่งใหม่บนแผนที่เพื่อย้าย")
 
     # =========================
     # DRAW MAP
@@ -40,21 +38,20 @@ def run():
     )
 
     # =========================
-    # GET EVENTS
+    # CLICK EVENT
     # =========================
     events = plotly_events(
         fig,
         click_event=True,
-        hover_event=True,   # 🔥 ใช้ hover เป็น drag
-        select_event=False
+        hover_event=False
     )
 
     # =========================
-    # DRAG LOGIC
+    # MOVE OBJECT
     # =========================
     if events:
-        x = max(0, min(100, int(events[-1]["x"])))
-        y = max(0, min(100, int(events[-1]["y"])))
+        x = int(events[0]["x"])
+        y = int(events[0]["y"])
 
         if target == "AP1":
             st.session_state.ap1 = [x, y]
@@ -78,9 +75,6 @@ def run():
 
     st.metric("📶 Best RSSI", f"{rssi:.2f} dBm")
 
-    # =========================
-    # DEBUG
-    # =========================
     with st.expander("📍 Current Position"):
         st.write("AP1:", st.session_state.ap1)
         st.write("AP2:", st.session_state.ap2)

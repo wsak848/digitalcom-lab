@@ -113,3 +113,13 @@ elif st.session_state.menu == "ofdm_wifi":
 elif st.session_state.menu == "rssi":
     from pages import rssi_dualwifi_page
     rssi_dualwifi_page.run()
+import traceback
+
+elif st.session_state.menu == "rssi":
+    try:
+        from pages import rssi_dualwifi_page
+        rssi_dualwifi_page.run()
+    except Exception as e:
+        st.error("ERROR:")
+        st.text(str(e))
+        st.text(traceback.format_exc())

@@ -75,9 +75,8 @@ try:
         mod.run()
 
     elif st.session_state.menu == "quant":
-        import quantizedsim1 as mod3
-        fig = mod3.run()
-        st.pyplot(fig)
+        import quantization_streamlit as mod3
+        mod3.run()
 
     elif st.session_state.menu == "line":
         import linecoding_test as mod3

@@ -61,6 +61,9 @@ if st.button("10. WiFi OFDM Simulation"):
 if st.button("11. Dual WiFi RSSI"):
     st.session_state.menu = "rssi"
 
+if st.button("12. การส่งข้อมูลดิจิทัล: Bit Rate / Line Coding / Baud / Nyquist"):
+    st.session_state.menu = "digital_transmission"
+
 # =========================
 # Routing
 # =========================
@@ -112,6 +115,10 @@ try:
     elif st.session_state.menu == "rssi":
         from pages import rssi_dualwifi_page
         rssi_dualwifi_page.run()
+
+    elif st.session_state.menu == "digital_transmission":
+        from digital_transmission_lab import render_digital_transmission_lab
+        render_digital_transmission_lab()
 
 except Exception as e:
     st.error("ERROR:")

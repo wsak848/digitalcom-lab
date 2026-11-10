@@ -15,16 +15,18 @@ def run():
     for key, value in pending.items():
         st.session_state[key] = value
     st.title('Dual WiFi RSSI - Walls & Heatmap')
-    st.caption('Drag AP / Device on the map. Drag wall centers to move, square ends to resize / rotate. Coordinates below also work.')
+    st.caption('Interactive map v2 • ลาก AP และกำแพงได้บนแผนที่')
+    st.info('ลากจุด AP1 / AP2 / Device เพื่อย้าย • ลากกลางกำแพงเพื่อเลื่อน • '
+            'ลากสี่เหลี่ยมที่ปลายกำแพงเพื่อยืดหรือหมุน แล้วปล่อยเมาส์เพื่อคำนวณใหม่')
     objects = []
-    with st.expander('AP and Device positions', expanded=True):
+    with st.expander('AP and Device positions', expanded=False):
         for name, default in [('AP1', (20., 80.)), ('AP2', (80., 20.)), ('Device', (50., 50.))]:
             cols = st.columns(2)
             objects.append([coordinate_input(cols[j], f'{name} {axis} (m)', default[j],
                             key=f'rssi_{name}_{axis}') for j, axis in enumerate(['X', 'Y'])])
     walls = []
     for i, default in enumerate([(35., 20., 35., 75.), (50., 65., 90., 65.)]):
-        with st.expander(f'Wall {i+1}: position, length and loss', expanded=True):
+        with st.expander(f'Wall {i+1}: position, length and loss', expanded=False):
             enabled = st.checkbox('Enabled', value=True, key=f'rssi_w{i}_enabled')
             cols = st.columns(4)
             coords = [coordinate_input(cols[j], label, default[j], key=f'rssi_w{i}_{j}')

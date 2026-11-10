@@ -1,0 +1,74 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+body{margin:0;font:14px sans-serif;color:#222}canvas{display:block;width:100%;touch-action:none}
+#hint{padding:6px 0}button{padding:5px 12px}
+</style></head><body>
+<div id="hint">Drag AP / Device to move. Drag a wall to move; drag its square ends to resize / rotate.</div>
+<canvas id="map" aria-label="Interactive RSSI floor map"></canvas>
+<div style="margin:4px 40px;max-width:400px"><div style="height:12px;background:linear-gradient(to right,#a50026,#ffffbf,#006837)"></div><div style="display:flex;justify-content:space-between"><span>-100 dBm</span><span>-65</span><span>-30 dBm</span></div></div>
+<script>
+const canvas=document.getElementById('map'), ctx=canvas.getContext('2d');
+let state=null, drag=null, box=null, serial=0;
+const colors=['#111','#174bce','#e32636'], wallColors=['#8b4513','#743c9d'];
+function send(type,data={}){parent.postMessage({isStreamlitMessage:true,type,...data},'*');}
+const clip=v=>Math.max(0,Math.min(100,v));
+function pixel(p){return [box.x+p[0]*box.s/100,box.y+(100-p[1])*box.s/100];}
+function data(p){return [(p[0]-box.x)*100/box.s,100-(p[1]-box.y)*100/box.s];}
+function pointer(e){const r=canvas.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];}
+function distance(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1]);}
+function heatColor(v){const t=Math.max(0,Math.min(1,(v+100)/70));
+ const a=t<.5?[165,0,38]:[255,255,191], b=t<.5?[255,255,191]:[0,104,55], f=t<.5?t*2:(t-.5)*2;
+ return `rgb(${a.map((x,i)=>Math.round(x+(b[i]-x)*f)).join(',')})`;}
+function draw(){if(!state)return;
+ const width=Math.max(280,canvas.clientWidth), height=Math.min(800,width+10), dpr=devicePixelRatio||1;
+ canvas.width=width*dpr;canvas.height=height*dpr;canvas.style.height=height+'px';ctx.scale(dpr,dpr);
+ box={x:40,y:20,s:Math.min(width-65,height-65)};
+ ctx.fillStyle='white';ctx.fillRect(0,0,width,height);
+ if(state.grid){const cell=box.s/101;
+  for(let y=0;y<101;y++)for(let x=0;x<101;x++){
+   ctx.fillStyle=heatColor(state.grid[y][x]);ctx.fillRect(box.x+x*cell,box.y+(100-y)*cell,cell+.5,cell+.5);}}
+ ctx.font='12px sans-serif';ctx.textAlign='center';
+ for(let v=0;v<=100;v+=20){const p=pixel([v,v]);ctx.strokeStyle='#8886';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(p[0],box.y);ctx.lineTo(p[0],box.y+box.s);ctx.moveTo(box.x,p[1]);ctx.lineTo(box.x+box.s,p[1]);ctx.stroke();
+  ctx.fillStyle='#222';ctx.fillText(v,p[0],box.y+box.s+17);ctx.fillText(v,box.x-20,p[1]+4);}
+ ctx.strokeStyle='#333';ctx.strokeRect(box.x,box.y,box.s,box.s);
+ let best=0;
+ // Backend supplies current best server; during dragging the dashed line is provisional.
+ best=state.best||0;
+ const ap=pixel(state.points[best]),dev=pixel(state.points[2]);
+ ctx.setLineDash([6,4]);ctx.strokeStyle='#555';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(...ap);ctx.lineTo(...dev);ctx.stroke();ctx.setLineDash([]);
+ state.walls.forEach((w,i)=>{const a=pixel(w.start),b=pixel(w.end);ctx.globalAlpha=w.enabled?1:.3;
+  ctx.strokeStyle=wallColors[i];ctx.fillStyle=wallColors[i];ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();
+  [a,b].forEach(p=>ctx.fillRect(p[0]-6,p[1]-6,12,12));ctx.font='bold 12px sans-serif';
+  ctx.fillText(`Wall ${i+1}: ${w.loss} dB`,(a[0]+b[0])/2,(a[1]+b[1])/2-12);ctx.globalAlpha=1;});
+ state.points.forEach((p,i)=>{const q=pixel(p);ctx.fillStyle=colors[i];ctx.strokeStyle='white';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(...q,10,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.font='bold 13px sans-serif';ctx.fillText(['AP1','AP2','Device'][i],q[0],q[1]-16);});
+ ctx.fillStyle='#222';ctx.font='12px sans-serif';ctx.fillText('X (meters)',box.x+box.s/2,box.y+box.s+35);
+ send('streamlit:setFrameHeight',{height:height+75});
+}
+function hit(p){
+ for(let i=0;i<3;i++)if(distance(p,pixel(state.points[i]))<16)return {kind:'point',i};
+ for(let i=0;i<2;i++)for(const end of ['start','end'])if(distance(p,pixel(state.walls[i][end]))<13)return {kind:'end',i,end};
+ for(let i=0;i<2;i++){const a=pixel(state.walls[i].start),b=pixel(state.walls[i].end),vx=b[0]-a[0],vy=b[1]-a[1];
+  const len=vx*vx+vy*vy,t=len?Math.max(0,Math.min(1,((p[0]-a[0])*vx+(p[1]-a[1])*vy)/len)):0;
+  if(distance(p,[a[0]+t*vx,a[1]+t*vy])<11)return {kind:'wall',i};}
+ return null;
+}
+canvas.addEventListener('pointerdown',e=>{if(!state||e.button!==0)return;const p=pointer(e),target=hit(p);if(!target)return;
+ drag={...target,anchor:data(p),original:JSON.parse(JSON.stringify(state)),moved:false};canvas.setPointerCapture(e.pointerId);e.preventDefault();});
+canvas.addEventListener('pointermove',e=>{if(!state)return;const p=pointer(e);if(!drag){canvas.style.cursor=hit(p)?'grab':'default';return;}
+ const q=data(p),o=drag.original;drag.moved=true;
+ if(drag.kind==='point')state.points[drag.i]=q.map(clip);
+ else if(drag.kind==='end'){const w=state.walls[drag.i],other=w[drag.end==='start'?'end':'start'],point=q.map(clip);if(distance(point,other)>=1)w[drag.end]=point;}
+ else {const w=o.walls[drag.i],delta=q.map((v,j)=>Math.max(-Math.min(w.start[j],w.end[j]),Math.min(100-Math.max(w.start[j],w.end[j]),v-drag.anchor[j])));
+  state.walls[drag.i].start=w.start.map((v,j)=>v+delta[j]);state.walls[drag.i].end=w.end.map((v,j)=>v+delta[j]);}
+ draw();});
+function finish(e,cancel=false){if(!drag)return;const changed=drag.moved;if(cancel)state=drag.original;drag=null;
+ if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId);
+ if(changed&&!cancel){send('streamlit:setComponentValue',{dataType:'json',value:{id:Date.now()+'-'+(++serial),points:state.points,walls:state.walls.map(w=>[...w.start,...w.end])}});}
+ draw();}
+canvas.addEventListener('pointerup',e=>finish(e));canvas.addEventListener('pointercancel',e=>finish(e,true));
+window.addEventListener('message',e=>{if(e.source!==parent||e.data.type!=='streamlit:render')return;state=JSON.parse(JSON.stringify(e.data.args));drag=null;draw();});
+window.addEventListener('resize',draw);
+send('streamlit:componentReady',{apiVersion:1});send('streamlit:setFrameHeight',{height:800});
+</script></body></html>
